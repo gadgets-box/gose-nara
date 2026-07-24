@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en" data-lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Privacy Policy / プライバシーポリシー — GOSE</title>
+<meta name="robots" content="index, follow">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<style>
+  body{max-width:760px;margin:0 auto;padding:4rem 6vw 6rem;font-family:Georgia,'Noto Serif JP',serif;line-height:1.8;color:#241F19;background:#EDE6D6;}
+  h1{font-size:1.9rem;margin-bottom:0.4rem;}
+  h2{font-size:1.2rem;margin-top:2.4rem;}
+  a{color:#9C4A26;}
+  .lang-toggle{display:inline-flex;border:1px solid #241F19;border-radius:999px;overflow:hidden;font-family:monospace;font-size:0.72rem;margin-bottom:2rem;}
+  .lang-toggle button{border:none;background:transparent;padding:0.4rem 0.9rem;cursor:pointer;font-family:inherit;font-size:inherit;}
+  html[data-lang="en"] .lang-toggle button[data-set="en"], html[data-lang="ja"] .lang-toggle button[data-set="ja"]{background:#241F19;color:#EDE6D6;}
+  html[data-lang="en"] .ja{display:none;} html[data-lang="ja"] .en{display:none;}
+  .back{display:inline-block;margin-top:2.5rem;font-family:monospace;font-size:0.8rem;}
+</style>
+</head>
+<body>
+
+<div class="lang-toggle" role="group" aria-label="Language / 言語">
+  <button type="button" data-set="en">EN</button>
+  <button type="button" data-set="ja">日本語</button>
+</div>
+
+<h1 class="en">Privacy Policy</h1>
+<h1 class="ja">プライバシーポリシー</h1>
+
+<p class="en">This site ("GOSE — 神々の降る里 御所市") is a static informational site about Gose City, Nara. This page explains what data is collected when you visit.</p>
+<p class="ja">当サイト（「GOSE — 神々の降る里 御所市」）は、奈良県御所市を紹介する静的な情報サイトです。このページでは、ご利用時に収集される情報についてご説明します。</p>
+
+<h2 class="en">Advertising</h2>
+<h2 class="ja">広告について</h2>
+<p class="en">This site may display advertisements served by Google AdSense. Google and its partners may use cookies and similar technologies to serve ads based on your prior visits to this or other websites. You can opt out of personalized advertising by visiting <a href="https://adssettings.google.com" target="_blank" rel="noopener">Google's Ads Settings</a>.</p>
+<p class="ja">当サイトでは、Google AdSenseによる広告が表示される場合があります。Googleおよびそのパートナーは、Cookieなどの技術を用いて、ユーザーの過去のアクセス情報に基づいた広告を配信することがあります。パーソナライズ広告を無効にしたい場合は、<a href="https://adssettings.google.com" target="_blank" rel="noopener">Googleの広告設定</a>から変更できます。</p>
+
+<h2 class="en">Cookies</h2>
+<h2 class="ja">Cookieについて</h2>
+<p class="en">Cookies may be used for advertising and for basic, aggregated analytics about how the site is used. No personally identifying information is collected directly by this site.</p>
+<p class="ja">Cookieは、広告配信や、サイト利用状況を把握するための簡易な集計目的で使用される場合があります。当サイト自体が個人を特定できる情報を直接収集することはありません。</p>
+
+<h2 class="en">EU / EEA / UK visitors</h2>
+<h2 class="ja">EU・EEA・英国からのアクセスについて</h2>
+<p class="en">If this site serves visitors in the EU, EEA, or UK, a Google-certified Consent Management Platform (CMP) should be used to collect consent before personalized ads are shown, in line with Google's EU User Consent Policy.</p>
+<p class="ja">EU・EEA・英国からの訪問者にサービスを提供する場合は、Googleの「EUユーザー同意ポリシー」に沿って、パーソナライズ広告を表示する前にGoogle認定の同意管理プラットフォーム（CMP）で同意を取得する必要があります。</p>
+
+<h2 class="en">Contact</h2>
+<h2 class="ja">お問い合わせ</h2>
+<p class="en">For questions about this policy, please use the contact details published on this site.</p>
+<p class="ja">本ポリシーに関するお問い合わせは、当サイトに記載の連絡先までご連絡ください。</p>
+
+<a class="back" href="index.html">
+  <span class="en">← Back to the site</span><span class="ja">← サイトに戻る</span>
+</a>
+
+<script>
+  document.querySelectorAll('.lang-toggle button').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const lang = btn.getAttribute('data-set');
+      document.documentElement.setAttribute('data-lang', lang);
+      document.documentElement.setAttribute('lang', lang);
+    });
+  });
+</script>
+</body>
+</html>
