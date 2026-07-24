@@ -1,0 +1,38 @@
+name: Monthly news refresh
+
+on:
+  schedule:
+    # 18:00 UTC on the 1st of every month = 03:00 JST on the 2nd.
+    # (GitHub's cron runs in UTC, and doesn't support day-of-month
+    # aliases like "L", so a plain numeric day is used here.)
+    - cron: "0 18 1 * *"
+  workflow_dispatch: {} # lets you trigger a refresh manually from the Actions tab
+
+jobs:
+  update-news:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Fetch latest Gose City news
+        run: node scripts/update-news.mjs
+
+      - name: Commit news.json if it changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add news.json
+          if git diff --staged --quiet; then
+            echo "No changes to news.json this month."
+          else
+            git commit -m "chore: monthly news refresh"
+            git push
+          fi
