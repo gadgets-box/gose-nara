@@ -92,20 +92,6 @@
                : 'winter';
     document.documentElement.setAttribute('data-season', season);
   })();
-  // Set the hero's time-of-day tint from the visitor's own clock. This
-  // only affects the sky gradient / mountain silhouette colours (see the
-  // data-time CSS rules) — the season above still controls the rest of
-  // the page. Re-checked periodically so a tab left open through sunset
-  // still drifts into the next tint.
-  function applyTimeOfDay(){
-    var h = new Date().getHours();
-    var t = (h>=5 && h<7) ? 'dawn'
-          : (h>=7 && h<17) ? 'day'
-          : (h>=17 && h<19) ? 'dusk'
-          : 'night';
-    document.documentElement.setAttribute('data-time', t);
-  }
-  applyTimeOfDay();
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -134,53 +120,91 @@
   html[data-season="spring"]{
     --washi:#F3E9E3; --washi-deep:#E9D9CE;
     --aizome:#3C5A63; --kakishibu:#C24E4E; --moss:#6B8A5A; --gold:#B98F4A;
-    --sky-a:#3C5D63; --sky-b:#6C8362; --sky-c:#A9B48A; --ridge-back:#9BAE7E;
+    --sky-a:#5C7C92; --sky-b:#8CAA7E; --sky-c:#C9A88A; --ridge-back:#A3B87E;
   }
   html[data-season="summer"]{
     --washi:#EDE9D8; --washi-deep:#E3DCC3;
     --aizome:#1F4A57; --kakishibu:#7A5C2E; --moss:#3F6B3B; --gold:#A9873F;
-    --sky-a:#1F4550; --sky-b:#2E5E5A; --sky-c:#6E8F5C; --ridge-back:#6E8F5C;
+    --sky-a:#135E7E; --sky-b:#1C8C93; --sky-c:#6FAE55; --ridge-back:#569642;
   }
   html[data-season="autumn"]{
     --washi:#EFE4CE; --washi-deep:#E6D8B9;
     --aizome:#2E4550; --kakishibu:#A8522A; --moss:#7C7048; --gold:#C79A44;
-    --sky-a:#2E4A57; --sky-b:#345566; --sky-c:#8A9773; --ridge-back:#8A9773;
+    --sky-a:#6E7256; --sky-b:#A98A4A; --sky-c:#C29A4A; --ridge-back:#96762A;
   }
   html[data-season="winter"]{
     --washi:#E7E2D6; --washi-deep:#DCD5C4; --sumi:#1D1814;
     --aizome:#1C333D; --kakishibu:#8C3B28; --moss:#4A5A4C; --gold:#8F7539;
-    --sky-a:#152A33; --sky-b:#1F3A44; --sky-c:#55605A; --ridge-back:#55605A;
+    --sky-a:#6E7A82; --sky-b:#8C9690; --sky-c:#A3ACA0; --ridge-back:#8C9488;
   }
 
-  /* ---------- TIME OF DAY ----------
-     data-time is set automatically from the visitor's current clock time
-     (see the inline script in <head>) and only re-tints the hero sky /
-     mountain silhouette — the season above still governs the paper,
-     ink, and accent colours used for the rest of the page. Because
-     these rules come after the seasonal ones, they win on the sky/ridge
-     variables specifically for any season. */
-  html[data-time="dawn"]{
-    --sky-a:#3B4A6B; --sky-b:#7A6E86; --sky-c:#E8A87C; --ridge-back:#8A7E93;
-  }
-  html[data-time="day"]{
-    --sky-a:#4C7A94; --sky-b:#6FA0AA; --sky-c:#B8C79A; --ridge-back:#8FAE7E;
-  }
-  html[data-time="dusk"]{
-    --sky-a:#2E3A5C; --sky-b:#86526B; --sky-c:#E08A4F; --ridge-back:#6E5A55;
-  }
-  html[data-time="night"]{
-    --sky-a:#0E1A24; --sky-b:#16232E; --sky-c:#2A3A3E; --ridge-back:#3A4A42;
-  }
+  /* ---------- SKY COLOUR (sun-altitude driven) ----------
+     The season rules above set a static fallback for --sky-a/b/c and
+     --ridge-back (shown before JS runs, or if it fails). Once the
+     celestial-positions script runs, it continuously recomputes these
+     same variables — blended between each season's own night/twilight/
+     day colours — from the real, currently-computed solar altitude at
+     Gose. That's what makes winter and summer nights genuinely
+     different colours, and makes the transition happen at each
+     season's own real sunset time rather than a fixed clock hour. See
+     the SEASON_SKY table and applySkyColour() in the script below. */
   .stars{
     position:absolute;
     top:0; left:0;
     width:100%; height:100%;
     z-index:1;
     opacity:0;
-    transition:opacity 1.2s ease;
+    transition:opacity 4s ease;
     pointer-events:none;
   }
-  html[data-time="night"] .stars{opacity:0.85;}
+
+  /* ---------- SUN & MOON ----------
+     Positioned in real time from actual solar/lunar astronomy for
+     Gose City (see the celestial-positions script). Left/top are set
+     inline by JS as percentages of the hero box; the .ridge element
+     comes after these in the DOM, so its opaque foreground naturally
+     covers the sun/moon once they sink behind the mountain silhouette
+     — no manual collision math needed. */
+  .celestial{
+    position:absolute;
+    top:0; left:0;
+    width:100%; height:100%;
+    z-index:1;
+    pointer-events:none;
+  }
+  .sun-disc{
+    position:absolute;
+    width:34px; height:34px;
+    margin:-17px 0 0 -17px;
+    border-radius:50%;
+    background:radial-gradient(circle, #FFF3D6 0%, #F6C866 45%, #E8934A 100%);
+    box-shadow:0 0 32px 10px rgba(246,200,102,0.55);
+    opacity:0;
+    transition:left 1.5s linear, top 1.5s linear, opacity 0.8s ease, background 1.5s ease, box-shadow 1.5s ease;
+  }
+  .moon-disc{
+    position:absolute;
+    width:30px; height:30px;
+    margin:-15px 0 0 -15px;
+    opacity:0;
+    filter:drop-shadow(0 0 8px rgba(237,230,214,0.5));
+    transition:left 1.5s linear, top 1.5s linear, opacity 0.8s ease;
+  }
+  .sky-caption{
+    position:absolute;
+    right:6vw; bottom:calc(10vh + 2.6rem);
+    z-index:2;
+    font-family:'JetBrains Mono',monospace;
+    font-size:0.66rem;
+    letter-spacing:0.04em;
+    line-height:1.9;
+    color:rgba(237,230,214,0.8);
+    text-align:right;
+    pointer-events:none;
+  }
+  @media (max-width:820px){
+    .sky-caption{position:static;text-align:left;margin-top:1.2rem;right:auto;bottom:auto;}
+  }
 
   body, .hero, .ridge path, .band, footer{
     transition: background-color 0.6s ease, color 0.6s ease;
@@ -631,6 +655,13 @@
     <circle cx="820" cy="240" r="1" fill="#EDE6D6"/>
     <circle cx="1170" cy="270" r="1.2" fill="#EDE6D6"/>
   </svg>
+  <div class="celestial" aria-hidden="true">
+    <div class="sun-disc" id="sun-disc"></div>
+    <svg class="moon-disc" id="moon-disc" viewBox="-24 -24 48 48">
+      <circle cx="0" cy="0" r="21" fill="#2A2420" opacity="0.55"/>
+      <path id="moon-lit" d="" fill="#EDE6D6"/>
+    </svg>
+  </div>
   <div class="hero-top">
     <div class="hero-mark">GOSE CITY · NARA · JAPAN</div>
     <div style="display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;">
@@ -660,6 +691,7 @@
     <span class="en">Begin the walk down the old road</span>
     <span class="ja">古道を、麓から歩きはじめる</span>
   </div>
+  <div class="sky-caption" id="sky-caption"></div>
   <div class="ridge">
     <svg viewBox="0 0 1440 320" preserveAspectRatio="none">
       <!-- View from near Kintetsu Gose Station, looking west across the
@@ -894,8 +926,8 @@
       </div>
       <div>
         <span class="eyebrow en">By road</span><span class="eyebrow ja">車で</span>
-        <p class="en">Keinawa Expressway, Gose IC or Gose-Minami PA — the Katsuragi ropeway base is a short drive further south.</p>
-        <p class="ja">京奈和自動車道の御所ICまたは御所南PAから。葛城山ロープウェイ乗り場へはさらに南へ進みます。</p>
+        <p class="en">Keinawa Expressway, Gose IC or Gose-Minami PA — the Katsuragi ropeway base is a short drive further west.</p>
+        <p class="ja">京奈和自動車道の御所ICまたは御所南PAから。葛城山ロープウェイ乗り場へはさらに西へ進みます。</p>
       </div>
       <div>
         <span class="eyebrow en">Best paced as</span><span class="eyebrow ja">おすすめの過ごし方</span>
@@ -966,9 +998,275 @@
 </div>
 
 <script>
-  // ---- keep the time-of-day tint current for long-open tabs ----
-  setInterval(applyTimeOfDay, 10 * 60 * 1000); // re-check every 10 minutes
+  // ============================================================
+  // Sun & moon position for Gose City, computed live in the browser
+  // from standard low-precision astronomical formulas (no external
+  // API, no server). Good accuracy for the sun (typically well under
+  // a degree; sunset time within about a minute); the moon uses only
+  // the main perturbation terms of lunar theory, so its position is
+  // approximate (roughly within a fraction of a degree) — plenty for
+  // this decorative illustration, not for navigation.
+  // ============================================================
+  (function(){
+    const GOSE_LAT = 34.4614, GOSE_LON = 135.7358;
+    const D2R = Math.PI/180, R2D = 180/Math.PI;
 
+    function julianDate(date){ return date.getTime()/86400000 + 2440587.5; }
+
+    function siderealTimeDeg(date){
+      const JD = julianDate(date);
+      const T = (JD - 2451545.0)/36525;
+      let gmst = 280.46061837 + 360.98564736629*(JD-2451545.0)
+               + 0.000387933*T*T - (T*T*T)/38710000;
+      return ((gmst % 360) + 360) % 360;
+    }
+
+    function sunEquatorial(date){
+      const JD = julianDate(date);
+      const n = JD - 2451545.0;
+      const L = ((280.460 + 0.9856474*n) % 360 + 360) % 360;
+      const g = ((357.528 + 0.9856003*n) % 360 + 360) % 360;
+      const gR = g*D2R;
+      const lambda = L + 1.915*Math.sin(gR) + 0.020*Math.sin(2*gR);
+      const eps = 23.439 - 0.0000004*n;
+      const lambdaR = lambda*D2R, epsR = eps*D2R;
+      const ra = (Math.atan2(Math.cos(epsR)*Math.sin(lambdaR), Math.cos(lambdaR))*R2D + 360) % 360;
+      const dec = Math.asin(Math.sin(epsR)*Math.sin(lambdaR))*R2D;
+      return { ra, dec, eclLon: lambda };
+    }
+
+    function moonEquatorial(date){
+      const JD = julianDate(date);
+      const T = (JD - 2451545.0)/36525;
+      const Lp = 218.3164477 + 481267.88123421*T;
+      const D  = 297.8501921 + 445267.1114034*T;
+      const M  = 357.5291092 + 35999.0502909*T;
+      const Mp = 134.9633964 + 477198.8675055*T;
+      const F  = 93.2720950  + 483202.0175233*T;
+      const DR=D*D2R, MR=M*D2R, MpR=Mp*D2R, FR=F*D2R;
+
+      const dL = 6.289*Math.sin(MpR) + 1.274*Math.sin(2*DR-MpR) + 0.658*Math.sin(2*DR)
+               + 0.214*Math.sin(2*MpR) - 0.186*Math.sin(MR) - 0.114*Math.sin(2*FR);
+      const dB = 5.128*Math.sin(FR) + 0.281*Math.sin(MpR+FR) + 0.278*Math.sin(MpR-FR)
+               + 0.173*Math.sin(2*DR-FR);
+
+      const lonEcl = ((Lp + dL) % 360 + 360) % 360;
+      const latEcl = dB;
+      const eps = 23.439 - 0.0000004*(JD-2451545.0);
+      const lonR = lonEcl*D2R, latR = latEcl*D2R, epsR = eps*D2R;
+
+      const sinDec = Math.sin(latR)*Math.cos(epsR) + Math.cos(latR)*Math.sin(epsR)*Math.sin(lonR);
+      const dec = Math.asin(sinDec)*R2D;
+      const y = Math.sin(lonR)*Math.cos(epsR) - Math.tan(latR)*Math.sin(epsR);
+      const x = Math.cos(lonR);
+      const ra = (Math.atan2(y,x)*R2D + 360) % 360;
+
+      const sunLon = sunEquatorial(date).eclLon;
+      const elong = ((lonEcl - sunLon) % 360 + 360) % 360;
+      const illum = (1 - Math.cos(elong*D2R)) / 2;
+      const waxing = elong < 180;
+      return { ra, dec, illum, elong, waxing };
+    }
+
+    function toHorizontal(ra, dec, date, lat, lon){
+      const lst = siderealTimeDeg(date) + lon;
+      const H = ((lst - ra) % 360 + 360) % 360;
+      const Hr = H*D2R, decR = dec*D2R, latR = lat*D2R;
+      const alt = Math.asin(Math.sin(decR)*Math.sin(latR) + Math.cos(decR)*Math.cos(latR)*Math.cos(Hr));
+      const yv = Math.sin(Hr);
+      const xv = Math.cos(Hr)*Math.sin(latR) - Math.tan(decR)*Math.cos(latR);
+      const azCompass = (Math.atan2(yv,xv)*R2D + 180 + 360) % 360; // 0=N,90=E,180=S,270=W
+      return { altitude: alt*R2D, azimuth: azCompass };
+    }
+
+    // Our hero illustration faces roughly west, showing the horizon
+    // from due south (left edge) through west (centre) to due north
+    // (right edge) — see the ridge SVG's own comment. Map that 180°
+    // sweep (azimuth 180→360) onto the hero's horizontal 0–100%.
+    function sceneX(azimuth){
+      if (azimuth < 180) return null; // behind the viewer, not in this view
+      return (azimuth - 180) / 180 * 100;
+    }
+    function sceneY(altitude){
+      // 0° altitude ~ near where the mountains meet the sky; ~85° ~ near
+      // the top of the hero. Approximate and deliberately not pixel-
+      // perfect against the jagged ridge — the opaque foreground layer
+      // (later in the DOM) naturally covers the disc as it "sets".
+      const horizon = 66, top = 6;
+      const clamped = Math.max(0, Math.min(85, altitude));
+      return horizon - (clamped/85) * (horizon-top);
+    }
+
+    function moonPathD(illum, waxing){
+      const r = 21;
+      const rx = r * Math.abs(1 - 2*illum);
+      const outerSweep = waxing ? 1 : 0;
+      const innerSweep = illum <= 0.5 ? (waxing ? 0 : 1) : (waxing ? 1 : 0);
+      return `M0,${-r} A${r},${r} 0 0,${outerSweep} 0,${r} A${rx},${r} 0 0,${innerSweep} 0,${-r} Z`;
+    }
+
+    function findTodaySunset(date, lat, lon){
+      // Sample every 4 minutes through the day and report the moment
+      // the sun's altitude crosses from + to − (its actual descent,
+      // not just any crossing, so a polar-ish edge case near sunrise
+      // doesn't get picked up instead).
+      const start = new Date(date); start.setHours(0,0,0,0);
+      let prevAlt = null, prevT = null, result = null;
+      for(let m=0; m<=1440; m+=4){
+        const t = new Date(start.getTime() + m*60000);
+        const sun = sunEquatorial(t);
+        const alt = toHorizontal(sun.ra, sun.dec, t, lat, lon).altitude;
+        if(prevAlt !== null && prevAlt >= 0 && alt < 0){ result = t; break; }
+        prevAlt = alt; prevT = t;
+      }
+      return result;
+    }
+
+    function fmtTime(date){
+      if(!date) return '—';
+      return date.getHours().toString().padStart(2,'0') + ':' + date.getMinutes().toString().padStart(2,'0');
+    }
+
+    // ---- season-aware sky colour, blended continuously from real
+    // solar altitude (see applySkyColour below) ----
+    // Reads the *current* data-season attribute rather than
+    // recalculating from today's date, so the 春/夏/秋/冬 toggle (which
+    // sets that attribute) actually changes the sky too, not just the
+    // page's paper/ink colours.
+    function currentSeason(){
+      const attr = document.documentElement.getAttribute('data-season');
+      if (attr && SEASON_SKY[attr]) return attr;
+      const m = new Date().getMonth() + 1;
+      return (m>=3 && m<=5) ? 'spring' : (m>=6 && m<=8) ? 'summer'
+           : (m>=9 && m<=11) ? 'autumn' : 'winter';
+    }
+
+    // Each season has its own night / twilight / day sky, so the same
+    // clock time (and the same real sun altitude) reads as a different
+    // colour depending on the time of year — a deep cold blue for a
+    // winter night, a warmer teal-green for a summer one, and so on.
+    // The "day" colours in particular are deliberately pushed apart
+    // (pastel spring, vivid saturated summer, warm amber autumn, pale
+    // washed-out winter) so the difference reads clearly at a glance.
+    const SEASON_SKY = {
+      spring: {
+        night:    { a:'#1B2540', b:'#26314F', c:'#3A4A4A', ridge:'#455048' },
+        twilight: { a:'#4A3F55', b:'#8C5F6E', c:'#E4A67C', ridge:'#8A7E93' },
+        day:      { a:'#5C7C92', b:'#8CAA7E', c:'#C9A88A', ridge:'#A3B87E' }
+      },
+      summer: {
+        night:    { a:'#0B1E22', b:'#123028', c:'#25392C', ridge:'#2E3F2E' },
+        twilight: { a:'#2A3550', b:'#5C4A63', c:'#C97A4E', ridge:'#5A5648' },
+        day:      { a:'#135E7E', b:'#1C8C93', c:'#6FAE55', ridge:'#569642' }
+      },
+      autumn: {
+        night:    { a:'#141E2E', b:'#1C2A2E', c:'#333A2E', ridge:'#3A3F30' },
+        twilight: { a:'#3A2E45', b:'#7A4E52', c:'#D98A4A', ridge:'#786450' },
+        day:      { a:'#6E7256', b:'#A98A4A', c:'#C29A4A', ridge:'#96762A' }
+      },
+      winter: {
+        night:    { a:'#080D16', b:'#0E1620', c:'#1A222A', ridge:'#232B2A' },
+        twilight: { a:'#232840', b:'#4A3E5C', c:'#9A6E68', ridge:'#585048' },
+        day:      { a:'#6E7A82', b:'#8C9690', c:'#A3ACA0', ridge:'#8C9488' }
+      }
+    };
+
+    function hexToRgb(hex){
+      const n = parseInt(hex.slice(1),16);
+      return [(n>>16)&255, (n>>8)&255, n&255];
+    }
+    function rgbToHex(rgb){
+      return '#' + rgb.map(v => Math.max(0,Math.min(255,Math.round(v))).toString(16).padStart(2,'0')).join('');
+    }
+    function lerpHex(hexA, hexB, t){
+      const a = hexToRgb(hexA), b = hexToRgb(hexB);
+      return rgbToHex([a[0]+(b[0]-a[0])*t, a[1]+(b[1]-a[1])*t, a[2]+(b[2]-a[2])*t]);
+    }
+    function blendStop(stops, key, t){
+      // t: 0 = night, 1 = twilight, 2 = day (fractional in between)
+      if(t <= 1) return lerpHex(stops.night[key], stops.twilight[key], t);
+      return lerpHex(stops.twilight[key], stops.day[key], t-1);
+    }
+
+    const root = document.documentElement;
+    const starsEl = document.querySelector('.stars');
+
+    function applySkyColour(altitude){
+      const stops = SEASON_SKY[currentSeason()];
+      // altitude <= -10 -> full night (t=0); -10..-2 -> night..twilight (t 0-1);
+      // -2..10 -> twilight..day (t 1-2); altitude >= 10 -> full day (t=2)
+      let t;
+      if (altitude <= -10) t = 0;
+      else if (altitude <= -2) t = (altitude+10)/8;
+      else if (altitude <= 10) t = 1 + (altitude+2)/12;
+      else t = 2;
+
+      root.style.setProperty('--sky-a', blendStop(stops,'a',t));
+      root.style.setProperty('--sky-b', blendStop(stops,'b',t));
+      root.style.setProperty('--sky-c', blendStop(stops,'c',t));
+      root.style.setProperty('--ridge-back', blendStop(stops,'ridge',t));
+
+      if(starsEl){
+        const starOpacity = Math.max(0, Math.min(1, (0 - Math.min(altitude,0))/8)); // fades in below the horizon
+        starsEl.style.opacity = altitude < -2 ? Math.max(0.15, starOpacity*0.85) : 0;
+      }
+    }
+
+    const sunEl = document.getElementById('sun-disc');
+    const moonEl = document.getElementById('moon-disc');
+    const moonLit = document.getElementById('moon-lit');
+    const captionEl = document.getElementById('sky-caption');
+    let sunsetToday = null, sunsetDay = null;
+
+    function update(){
+      const now = new Date();
+
+      if(sunsetDay !== now.toDateString()){
+        sunsetToday = findTodaySunset(now, GOSE_LAT, GOSE_LON);
+        sunsetDay = now.toDateString();
+      }
+
+      const sun = sunEquatorial(now);
+      const sunPos = toHorizontal(sun.ra, sun.dec, now, GOSE_LAT, GOSE_LON);
+      applySkyColour(sunPos.altitude);
+      const sx = sceneX(sunPos.azimuth);
+      if(sx === null || sunPos.altitude < -2){
+        sunEl.style.opacity = 0;
+      } else {
+        sunEl.style.left = sx + '%';
+        sunEl.style.top = sceneY(sunPos.altitude) + '%';
+        sunEl.style.opacity = 1;
+        // warmer / redder near the horizon, paler and brighter higher up
+        const warmth = Math.max(0, Math.min(1, 1 - sunPos.altitude/30));
+        const glowSize = 10 + warmth*10;
+        sunEl.style.boxShadow = `0 0 ${28+warmth*20}px ${glowSize}px rgba(232,147,74,${0.35+warmth*0.35})`;
+      }
+
+      const moon = moonEquatorial(now);
+      const moonPos = toHorizontal(moon.ra, moon.dec, now, GOSE_LAT, GOSE_LON);
+      const mx = sceneX(moonPos.azimuth);
+      moonLit.setAttribute('d', moonPathD(moon.illum, moon.waxing));
+      if(mx === null || moonPos.altitude < -2){
+        moonEl.style.opacity = 0;
+      } else {
+        moonEl.style.left = mx + '%';
+        moonEl.style.top = sceneY(moonPos.altitude) + '%';
+        moonEl.style.opacity = 1;
+      }
+
+      const pct = Math.round(moon.illum*100);
+      captionEl.innerHTML =
+        `<span class="en">Sunset ${fmtTime(sunsetToday)} · Moon ${pct}% ${moon.waxing ? 'waxing' : 'waning'}</span>` +
+        `<span class="ja">日の入り ${fmtTime(sunsetToday)}・月の満ち具合 ${pct}%（${moon.waxing ? '満ちていく' : '欠けていく'}）</span>`;
+    }
+
+    update();
+    setInterval(update, 60 * 1000);
+    window.refreshCelestialSky = update; // let the season toggle re-run this immediately
+  })();
+</script>
+
+<script>
   // ---- scroll reveal ----
   const items = document.querySelectorAll('.reveal');
   if('IntersectionObserver' in window){
@@ -991,6 +1289,7 @@
   document.querySelectorAll('.season-toggle button').forEach(btn=>{
     btn.addEventListener('click', ()=>{
       document.documentElement.setAttribute('data-season', btn.getAttribute('data-season-set'));
+      if (window.refreshCelestialSky) window.refreshCelestialSky(); // don't wait for the next 60s tick
     });
   });
 
