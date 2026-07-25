@@ -152,7 +152,6 @@
     position:absolute;
     top:0; left:0;
     width:100%; height:100%;
-    z-index:1;
     opacity:0;
     transition:opacity 4s ease;
     pointer-events:none;
@@ -169,7 +168,6 @@
     position:absolute;
     top:0; left:0;
     width:100%; height:100%;
-    z-index:1;
     pointer-events:none;
   }
   .sun-disc{
@@ -1087,14 +1085,40 @@
       if (azimuth < 180) return null; // behind the viewer, not in this view
       return (azimuth - 180) / 180 * 100;
     }
+    // ---- Real horizon position, measured from the actual rendered DOM ----
+    // The .ridge SVG's height (and therefore how much of the hero it
+    // covers) depends on the viewport's own aspect ratio — a fixed
+    // percentage guess drifts badly on some window sizes. Instead,
+    // measure the ridge element's real on-screen box each time, and
+    // use the ridge's own LOWEST point within its 1440×320 viewBox
+    // (the low col around x=1050, y=210) as "0° altitude" — so the sun
+    // is only ever hidden by the actual DOM occlusion once it reaches
+    // roughly the lowest dip in the skyline, not the tallest peak.
+    const RIDGE_VIEWBOX_H = 320, RIDGE_VALLEY_MAX_Y = 210;
+    let horizonPercent = 66; // sensible fallback until first measurement
+    function measureHorizon(){
+      const hero = document.querySelector('.hero');
+      const ridge = document.querySelector('.ridge');
+      if(!hero || !ridge) return;
+      const heroRect = hero.getBoundingClientRect();
+      const ridgeRect = ridge.getBoundingClientRect();
+      if(heroRect.height <= 0) return;
+      const ridgeTopPct = ((ridgeRect.top - heroRect.top) / heroRect.height) * 100;
+      const ridgeHeightPct = (ridgeRect.height / heroRect.height) * 100;
+      horizonPercent = ridgeTopPct + (RIDGE_VALLEY_MAX_Y/RIDGE_VIEWBOX_H) * ridgeHeightPct;
+    }
+    measureHorizon();
+    window.addEventListener('resize', measureHorizon);
+
     function sceneY(altitude){
-      // 0° altitude ~ near where the mountains meet the sky; ~85° ~ near
-      // the top of the hero. Approximate and deliberately not pixel-
-      // perfect against the jagged ridge — the opaque foreground layer
-      // (later in the DOM) naturally covers the disc as it "sets".
-      const horizon = 66, top = 6;
+      // 0° altitude ~ the real, measured height of the tallest peak;
+      // ~85° ~ near the top of the hero. Deliberately not pixel-perfect
+      // against every jagged dip in the ridge — the opaque foreground
+      // layer (later in the DOM) naturally covers the disc as it "sets"
+      // once it visually reaches the silhouette.
+      const top = 6;
       const clamped = Math.max(0, Math.min(85, altitude));
-      return horizon - (clamped/85) * (horizon-top);
+      return horizonPercent - (clamped/85) * (horizonPercent-top);
     }
 
     function moonPathD(illum, waxing){
@@ -1220,6 +1244,7 @@
 
     function update(){
       const now = new Date();
+      measureHorizon();
 
       if(sunsetDay !== now.toDateString()){
         sunsetToday = findTodaySunset(now, GOSE_LAT, GOSE_LON);
