@@ -1,10 +1,4 @@
 <!DOCTYPE html>
-<!--
-  ALTERNATE HERO VARIANT — view from near Kintetsu Gose Station.
-  The main site version (Route 309 / Mizukoshi Pass view) is unchanged
-  in index.html. This file is a copy of it with only the hero mountain
-  SVG (and this comment) different, for side-by-side comparison.
--->
 <html lang="ja" data-lang="ja">
 <head>
 <meta charset="UTF-8">
@@ -98,6 +92,20 @@
                : 'winter';
     document.documentElement.setAttribute('data-season', season);
   })();
+  // Set the hero's time-of-day tint from the visitor's own clock. This
+  // only affects the sky gradient / mountain silhouette colours (see the
+  // data-time CSS rules) — the season above still controls the rest of
+  // the page. Re-checked periodically so a tab left open through sunset
+  // still drifts into the next tint.
+  function applyTimeOfDay(){
+    var h = new Date().getHours();
+    var t = (h>=5 && h<7) ? 'dawn'
+          : (h>=7 && h<17) ? 'day'
+          : (h>=17 && h<19) ? 'dusk'
+          : 'night';
+    document.documentElement.setAttribute('data-time', t);
+  }
+  applyTimeOfDay();
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -143,6 +151,37 @@
     --aizome:#1C333D; --kakishibu:#8C3B28; --moss:#4A5A4C; --gold:#8F7539;
     --sky-a:#152A33; --sky-b:#1F3A44; --sky-c:#55605A; --ridge-back:#55605A;
   }
+
+  /* ---------- TIME OF DAY ----------
+     data-time is set automatically from the visitor's current clock time
+     (see the inline script in <head>) and only re-tints the hero sky /
+     mountain silhouette — the season above still governs the paper,
+     ink, and accent colours used for the rest of the page. Because
+     these rules come after the seasonal ones, they win on the sky/ridge
+     variables specifically for any season. */
+  html[data-time="dawn"]{
+    --sky-a:#3B4A6B; --sky-b:#7A6E86; --sky-c:#E8A87C; --ridge-back:#8A7E93;
+  }
+  html[data-time="day"]{
+    --sky-a:#4C7A94; --sky-b:#6FA0AA; --sky-c:#B8C79A; --ridge-back:#8FAE7E;
+  }
+  html[data-time="dusk"]{
+    --sky-a:#2E3A5C; --sky-b:#86526B; --sky-c:#E08A4F; --ridge-back:#6E5A55;
+  }
+  html[data-time="night"]{
+    --sky-a:#0E1A24; --sky-b:#16232E; --sky-c:#2A3A3E; --ridge-back:#3A4A42;
+  }
+  .stars{
+    position:absolute;
+    top:0; left:0;
+    width:100%; height:100%;
+    z-index:1;
+    opacity:0;
+    transition:opacity 1.2s ease;
+    pointer-events:none;
+  }
+  html[data-time="night"] .stars{opacity:0.85;}
+
   body, .hero, .ridge path, .band, footer{
     transition: background-color 0.6s ease, color 0.6s ease;
   }
@@ -368,6 +407,34 @@
     color:var(--aizome);
   }
 
+  .overview-map svg{overflow:visible;}
+
+  .overview-map{
+    display:flex;
+    align-items:center;
+    gap:2rem;
+    flex-wrap:wrap;
+    margin-top:2.2rem;
+    padding-top:2rem;
+    border-top:1px solid var(--line);
+  }
+  .overview-map svg{width:150px;height:auto;flex-shrink:0;}
+  .overview-map .pin-label{
+    font-family:'Fraunces','Noto Serif JP',serif;
+    font-size:30px;
+    fill:var(--washi);
+    text-anchor:middle;
+  }
+  .overview-legend{
+    display:grid;
+    grid-template-columns:repeat(2, auto);
+    gap:0.4rem 1.4rem;
+    font-family:'JetBrains Mono',monospace;
+    font-size:0.74rem;
+    color:var(--aizome);
+  }
+  .overview-legend b{color:var(--kakishibu);font-family:'Fraunces','Noto Serif JP',serif;font-size:0.95rem;margin-right:0.4rem;}
+
   .reveal{opacity:0;transform:translateY(18px);transition:opacity 0.8s ease, transform 0.8s ease;}
   .reveal.in{opacity:1;transform:translateY(0);}
 
@@ -511,7 +578,59 @@
 </head>
 <body>
 
+<!-- ============================================================
+     Shared map geography, referenced by <use> in the overview map at
+     the bottom of the page (see .overview-map). Pin positions are a
+     simplified equirectangular projection of each location's real
+     coordinates (Kintetsu-Gose Station area as north/east reference):
+       一 Takakamo Shrine area      82,490
+       二 Katsuragi-tozanguchi Sta. 30,37
+       三 Hitokotonushi Shrine      110,184
+       四 Kissho-so-ji              359,56
+       五 Kintetsu-Gose Station     250,30
+       六 Kamokimi-no-yu            141,453
+     ============================================================ -->
+<svg style="display:none" aria-hidden="true">
+  <defs>
+    <symbol id="gosemap" viewBox="0 0 380 520">
+      <rect x="6" y="6" width="368" height="508" rx="20" style="fill:var(--washi-deep)" opacity="0.7"/>
+      <path d="M20,55 L46,105 L24,150 L50,198 L27,248 L52,298 L29,348 L48,398 L25,448 L44,500" fill="none" style="stroke:var(--moss)" stroke-width="10" stroke-linecap="round" opacity="0.35"/>
+      <path d="M30,37 L60,90 L110,184 L82,490" fill="none" style="stroke:var(--kakishibu)" stroke-width="2" stroke-dasharray="1 8" stroke-linecap="round" opacity="0.45"/>
+      <path d="M110,184 L141,453" fill="none" style="stroke:var(--kakishibu)" stroke-width="2" stroke-dasharray="1 8" stroke-linecap="round" opacity="0.3"/>
+      <circle cx="82" cy="490" r="6" style="fill:var(--aizome)" opacity="0.4"/>
+      <circle cx="30" cy="37" r="6" style="fill:var(--aizome)" opacity="0.4"/>
+      <circle cx="110" cy="184" r="6" style="fill:var(--aizome)" opacity="0.4"/>
+      <circle cx="359" cy="56" r="6" style="fill:var(--aizome)" opacity="0.4"/>
+      <circle cx="250" cy="30" r="6" style="fill:var(--aizome)" opacity="0.4"/>
+      <circle cx="141" cy="453" r="6" style="fill:var(--aizome)" opacity="0.4"/>
+    </symbol>
+  </defs>
+</svg>
+
+
 <section class="hero">
+  <svg class="stars" viewBox="0 0 1440 620" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <circle cx="80" cy="60" r="1.4" fill="#EDE6D6"/>
+    <circle cx="180" cy="140" r="1" fill="#EDE6D6"/>
+    <circle cx="260" cy="70" r="1.6" fill="#EDE6D6"/>
+    <circle cx="340" cy="190" r="1" fill="#EDE6D6"/>
+    <circle cx="430" cy="90" r="1.3" fill="#EDE6D6"/>
+    <circle cx="520" cy="160" r="1" fill="#EDE6D6"/>
+    <circle cx="610" cy="55" r="1.5" fill="#EDE6D6"/>
+    <circle cx="700" cy="130" r="1" fill="#EDE6D6"/>
+    <circle cx="790" cy="75" r="1.4" fill="#EDE6D6"/>
+    <circle cx="880" cy="170" r="1" fill="#EDE6D6"/>
+    <circle cx="960" cy="100" r="1.6" fill="#EDE6D6"/>
+    <circle cx="1050" cy="50" r="1" fill="#EDE6D6"/>
+    <circle cx="1140" cy="150" r="1.3" fill="#EDE6D6"/>
+    <circle cx="1230" cy="85" r="1" fill="#EDE6D6"/>
+    <circle cx="1310" cy="180" r="1.5" fill="#EDE6D6"/>
+    <circle cx="1390" cy="110" r="1" fill="#EDE6D6"/>
+    <circle cx="150" cy="250" r="1" fill="#EDE6D6"/>
+    <circle cx="480" cy="260" r="1.2" fill="#EDE6D6"/>
+    <circle cx="820" cy="240" r="1" fill="#EDE6D6"/>
+    <circle cx="1170" cy="270" r="1.2" fill="#EDE6D6"/>
+  </svg>
   <div class="hero-top">
     <div class="hero-mark">GOSE CITY · NARA · JAPAN</div>
     <div style="display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;">
@@ -591,6 +710,7 @@
       <span class="eyebrow en">Marker Two — The Twin Peaks</span>
       <span class="eyebrow ja">二丁目 — ツインピークス</span>
 
+
       <h2 class="en">Mount Kongo &amp; Mount Katsuragi, Nara's <em>Twin Peaks</em></h2>
       <h2 class="ja">金剛山と葛城山、大和の<em>ツインピークス</em></h2>
 
@@ -627,6 +747,7 @@
     <div class="wcontent">
       <span class="eyebrow en">Marker Three — The Old Road</span>
       <span class="eyebrow ja">三丁目 — 古道にて</span>
+
 
       <h2 class="en">Walk the <em>Katsuragi Kodo</em>, a road older than the capital</h2>
       <h2 class="ja">都より古い道、<em>葛城古道</em>を歩く</h2>
@@ -674,6 +795,7 @@
       <span class="eyebrow en">Marker Four — The Fire &amp; The Grass</span>
       <span class="eyebrow ja">四丁目 — 火と、すすきと</span>
 
+
       <h2 class="en">A festival of fire, and a festival of grass</h2>
       <h2 class="ja">火の祭りと、<em>すすきの</em>祭り</h2>
 
@@ -685,6 +807,7 @@
   <div class="band">
     <span class="eyebrow en">Marker Five — The Merchant Town</span>
     <span class="eyebrow ja">五丁目 — 商家の町</span>
+
 
     <h2 class="en">Gose-machi: an Edo-period town that never got rebuilt</h2>
     <h2 class="ja">建て替えられなかった、<em>江戸の町</em>「御所まち」</h2>
@@ -713,6 +836,7 @@
     <div class="wcontent">
       <span class="eyebrow en">Marker Six — Where the Road Ends</span>
       <span class="eyebrow ja">六丁目 — 道の終わりに</span>
+
 
       <h2 class="en">Kamokimi no Yu, a hot spring at the mountain's foot</h2>
       <h2 class="ja">葛城山麓の湯、<em>かもきみの湯</em></h2>
@@ -779,6 +903,32 @@
         <p class="ja">葛城古道を歩くだけなら半日、山と町並みまで含めるなら一日ゆっくりと。</p>
       </div>
     </div>
+
+    <div class="overview-map">
+      <svg viewBox="0 0 380 520" aria-hidden="true">
+        <use href="#gosemap"/>
+        <circle cx="82" cy="490" r="24" style="fill:var(--kakishibu)"/>
+        <text class="pin-label" x="82" y="504">一</text>
+        <circle cx="30" cy="37" r="24" style="fill:var(--kakishibu)"/>
+        <text class="pin-label" x="30" y="51">二</text>
+        <circle cx="110" cy="184" r="24" style="fill:var(--kakishibu)"/>
+        <text class="pin-label" x="110" y="198">三</text>
+        <circle cx="359" cy="56" r="24" style="fill:var(--kakishibu)"/>
+        <text class="pin-label" x="359" y="70">四</text>
+        <circle cx="250" cy="30" r="24" style="fill:var(--kakishibu)"/>
+        <text class="pin-label" x="250" y="44">五</text>
+        <circle cx="141" cy="453" r="24" style="fill:var(--kakishibu)"/>
+        <text class="pin-label" x="141" y="467">六</text>
+      </svg>
+      <div class="overview-legend">
+        <div><b>一</b><span class="en">The Foothill</span><span class="ja">麓にて</span></div>
+        <div><b>二</b><span class="en">The Twin Peaks</span><span class="ja">ツインピークス</span></div>
+        <div><b>三</b><span class="en">The Old Road</span><span class="ja">古道にて</span></div>
+        <div><b>四</b><span class="en">Fire &amp; Grass</span><span class="ja">火とすすき</span></div>
+        <div><b>五</b><span class="en">The Merchant Town</span><span class="ja">商家の町</span></div>
+        <div><b>六</b><span class="en">Where the Road Ends</span><span class="ja">道の終わりに</span></div>
+      </div>
+    </div>
   </div>
 </main>
 
@@ -816,6 +966,9 @@
 </div>
 
 <script>
+  // ---- keep the time-of-day tint current for long-open tabs ----
+  setInterval(applyTimeOfDay, 10 * 60 * 1000); // re-check every 10 minutes
+
   // ---- scroll reveal ----
   const items = document.querySelectorAll('.reveal');
   if('IntersectionObserver' in window){
