@@ -1,5 +1,11 @@
 <!DOCTYPE html>
-<html lang="en" data-lang="en">
+<!--
+  ALTERNATE HERO VARIANT — view from near Kintetsu Gose Station.
+  The main site version (Route 309 / Mizukoshi Pass view) is unchanged
+  in index.html. This file is a copy of it with only the hero mountain
+  SVG (and this comment) different, for side-by-side comparison.
+-->
+<html lang="ja" data-lang="ja">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -29,8 +35,8 @@
 <meta property="og:image" content="https://REPLACE_WITH_YOUR_DOMAIN/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:locale" content="en_US">
-<meta property="og:locale:alternate" content="ja_JP">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:locale:alternate" content="en_US">
 
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="GOSE — The Village Where Gods Descend / 神々の降る里 御所市">
@@ -80,20 +86,65 @@
       document.documentElement.setAttribute('lang', h);
     }
   })();
+  // Set the seasonal colour palette before first paint, based on today's
+  // date (Mar–May spring, Jun–Aug summer, Sep–Nov autumn, Dec–Feb winter).
+  // Visitors can still override it for their own view with the 春/夏/秋/冬
+  // toggle further down the page.
+  (function(){
+    var m = new Date().getMonth() + 1; // 1–12
+    var season = (m>=3 && m<=5) ? 'spring'
+               : (m>=6 && m<=8) ? 'summer'
+               : (m>=9 && m<=11) ? 'autumn'
+               : 'winter';
+    document.documentElement.setAttribute('data-season', season);
+  })();
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=Spectral:ital,wght@0,300;0,400;0,500;1,400&family=Noto+Serif+JP:wght@300;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root{
-    --washi:#EDE6D6;
-    --washi-deep:#E3DAC5;
+    --washi:#EFE4CE;
+    --washi-deep:#E6D8B9;
     --sumi:#241F19;
-    --aizome:#25404C;
-    --kakishibu:#9C4A26;
-    --moss:#5C6B47;
-    --gold:#A9873F;
+    --aizome:#2E4550;
+    --kakishibu:#A8522A;
+    --moss:#7C7048;
+    --gold:#C79A44;
+    --sky-a:#2E4A57;
+    --sky-b:#345566;
+    --sky-c:#8A9773;
+    --ridge-back:#8A9773;
     --line: rgba(36,31,25,0.16);
+  }
+
+  /* ---------- SEASONAL PALETTES ----------
+     data-season is set automatically from today's date (see the inline
+     script in <head>), and can be overridden for the current view with
+     the 春/夏/秋/冬 toggle. Colours transition smoothly rather than
+     jumping, since every seasonal accent below is just a CSS variable. */
+  html[data-season="spring"]{
+    --washi:#F3E9E3; --washi-deep:#E9D9CE;
+    --aizome:#3C5A63; --kakishibu:#C24E4E; --moss:#6B8A5A; --gold:#B98F4A;
+    --sky-a:#3C5D63; --sky-b:#6C8362; --sky-c:#A9B48A; --ridge-back:#9BAE7E;
+  }
+  html[data-season="summer"]{
+    --washi:#EDE9D8; --washi-deep:#E3DCC3;
+    --aizome:#1F4A57; --kakishibu:#7A5C2E; --moss:#3F6B3B; --gold:#A9873F;
+    --sky-a:#1F4550; --sky-b:#2E5E5A; --sky-c:#6E8F5C; --ridge-back:#6E8F5C;
+  }
+  html[data-season="autumn"]{
+    --washi:#EFE4CE; --washi-deep:#E6D8B9;
+    --aizome:#2E4550; --kakishibu:#A8522A; --moss:#7C7048; --gold:#C79A44;
+    --sky-a:#2E4A57; --sky-b:#345566; --sky-c:#8A9773; --ridge-back:#8A9773;
+  }
+  html[data-season="winter"]{
+    --washi:#E7E2D6; --washi-deep:#DCD5C4; --sumi:#1D1814;
+    --aizome:#1C333D; --kakishibu:#8C3B28; --moss:#4A5A4C; --gold:#8F7539;
+    --sky-a:#152A33; --sky-b:#1F3A44; --sky-c:#55605A; --ridge-back:#55605A;
+  }
+  body, .hero, .ridge path, .band, footer{
+    transition: background-color 0.6s ease, color 0.6s ease;
   }
   *{box-sizing:border-box;}
   html{scroll-behavior:smooth;}
@@ -150,6 +201,52 @@
     background:rgba(237,230,214,0.92);
     color:var(--sumi);
   }
+  .season-toggle{
+    position:relative;z-index:3;
+    display:inline-flex;
+    border:1px solid rgba(237,230,214,0.4);
+    border-radius:999px;
+    overflow:hidden;
+    font-family:'JetBrains Mono',monospace;
+    font-size:0.68rem;
+    letter-spacing:0.08em;
+  }
+  .season-toggle button .ja{
+    font-family:'Fraunces','Noto Serif JP',serif;
+    font-size:0.95rem;
+    letter-spacing:0;
+  }
+  .season-toggle button{
+    appearance:none;border:none;background:transparent;
+    color:rgba(237,230,214,0.75);
+    padding:0.4rem 0.65rem;
+    cursor:pointer;
+    line-height:1;
+  }
+  html[data-season="spring"] .season-toggle button[data-season-set="spring"],
+  html[data-season="summer"] .season-toggle button[data-season-set="summer"],
+  html[data-season="autumn"] .season-toggle button[data-season-set="autumn"],
+  html[data-season="winter"] .season-toggle button[data-season-set="winter"]{
+    background:rgba(237,230,214,0.92);
+    color:var(--sumi);
+  }
+  footer .lang-toggle,
+  footer .season-toggle{
+    border-color:var(--line);
+  }
+  footer .lang-toggle button,
+  footer .season-toggle button{
+    color:#8a7f70;
+  }
+  html[data-lang="en"] footer .lang-toggle button[data-set="en"],
+  html[data-lang="ja"] footer .lang-toggle button[data-set="ja"],
+  html[data-season="spring"] footer .season-toggle button[data-season-set="spring"],
+  html[data-season="summer"] footer .season-toggle button[data-season-set="summer"],
+  html[data-season="autumn"] footer .season-toggle button[data-season-set="autumn"],
+  html[data-season="winter"] footer .season-toggle button[data-season-set="winter"]{
+    background:var(--sumi);
+    color:var(--washi);
+  }
 
   /* ---------- HERO ---------- */
   .hero{
@@ -159,7 +256,7 @@
     flex-direction:column;
     justify-content:flex-end;
     padding:8vh 6vw 10vh;
-    background:linear-gradient(180deg, #2E4A57 0%, #345566 38%, #7C8A6E 78%, var(--washi) 100%);
+    background:linear-gradient(180deg, var(--sky-a) 0%, var(--sky-b) 38%, var(--sky-c) 78%, var(--washi) 100%);
     overflow:hidden;
   }
   .ridge{
@@ -417,9 +514,17 @@
 <section class="hero">
   <div class="hero-top">
     <div class="hero-mark">GOSE CITY · NARA · JAPAN</div>
-    <div class="lang-toggle" role="group" aria-label="Language / 言語">
-      <button type="button" data-set="en">EN</button>
-      <button type="button" data-set="ja">日本語</button>
+    <div style="display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;">
+      <div class="season-toggle" role="group" aria-label="Season / 季節">
+        <button type="button" data-season-set="spring" title="Spring / 春" aria-label="Spring / 春"><span class="en">Spring</span><span class="ja">春</span></button>
+        <button type="button" data-season-set="summer" title="Summer / 夏" aria-label="Summer / 夏"><span class="en">Summer</span><span class="ja">夏</span></button>
+        <button type="button" data-season-set="autumn" title="Autumn / 秋" aria-label="Autumn / 秋"><span class="en">Autumn</span><span class="ja">秋</span></button>
+        <button type="button" data-season-set="winter" title="Winter / 冬" aria-label="Winter / 冬"><span class="en">Winter</span><span class="ja">冬</span></button>
+      </div>
+      <div class="lang-toggle" role="group" aria-label="Language / 言語">
+        <button type="button" data-set="en">EN</button>
+        <button type="button" data-set="ja">日本語</button>
+      </div>
     </div>
   </div>
   <div class="hero-body">
@@ -438,8 +543,14 @@
   </div>
   <div class="ridge">
     <svg viewBox="0 0 1440 320" preserveAspectRatio="none">
-      <path d="M0,220 L120,180 L210,205 L300,140 L360,170 L430,90 L470,120 L540,60 L600,100 L660,75 L720,130 L800,95 L860,150 L940,110 L1020,175 L1100,150 L1180,200 L1260,170 L1350,215 L1440,190 L1440,320 L0,320 Z" fill="#8A9773" opacity="0.55"/>
-      <path d="M0,260 L100,235 L190,255 L280,200 L350,230 L420,165 L480,195 L560,140 L640,180 L710,150 L790,205 L870,170 L950,215 L1030,190 L1110,235 L1200,210 L1290,250 L1440,225 L1440,320 L0,320 Z" fill="#EDE6D6"/>
+      <!-- View from near Kintetsu Gose Station, looking west across the
+           tracks: Mount Katsuragi stands directly ahead as the tallest,
+           closest peak; Mount Kongo rises to its left (south), a touch
+           lower/further back from this angle; and, far to the right
+           (north), the much lower twin summits of Mount Nijo (Odake &
+           Mendake) sit at the edge of view. -->
+      <path d="M0,150 L120,110 L220,140 L320,75 L420,130 L500,170 L580,140 L680,60 L780,110 L860,160 L950,190 L1050,210 L1130,175 L1200,140 L1260,165 L1320,150 L1440,190 L1440,320 L0,320 Z" style="fill:var(--ridge-back)" opacity="0.55"/>
+      <path d="M0,202.2 L120,172.6 L220,194.8 L320,146.7 L420,187.4 L500,217 L580,194.8 L680,135.6 L780,172.6 L860,209.6 L950,231.8 L1050,246.6 L1130,220.7 L1200,194.8 L1260,213.3 L1320,202.2 L1440,231.8 L1440,320 L0,320 Z" style="fill:var(--washi)"/>
     </svg>
   </div>
 </section>
@@ -500,7 +611,7 @@
         <div>
           <div class="num en">ALL YEAR</div><div class="num ja">通年</div>
           <h4 class="en">Katsuragi ropeway</h4><h4 class="ja">葛城山ロープウェイ</h4>
-          <p class="en">Katsuragi登山口駅 to the summit station</p><p class="ja">葛城登山口駅から山頂駅へ</p>
+          <p class="en">Katsuragi-tozanguchi Station to the summit station</p><p class="ja">葛城登山口駅から山頂駅へ</p>
         </div>
       </div>
     </div>
@@ -676,6 +787,12 @@
   <a href="privacy-policy.html" style="text-decoration:underline;">
     <span class="en">Privacy Policy</span><span class="ja">プライバシーポリシー</span>
   </a>
+  <div class="season-toggle" role="group" aria-label="Season / 季節">
+    <button type="button" data-season-set="spring" title="Spring / 春" aria-label="Spring / 春"><span class="en">Spring</span><span class="ja">春</span></button>
+    <button type="button" data-season-set="summer" title="Summer / 夏" aria-label="Summer / 夏"><span class="en">Summer</span><span class="ja">夏</span></button>
+    <button type="button" data-season-set="autumn" title="Autumn / 秋" aria-label="Autumn / 秋"><span class="en">Autumn</span><span class="ja">秋</span></button>
+    <button type="button" data-season-set="winter" title="Winter / 冬" aria-label="Winter / 冬"><span class="en">Winter</span><span class="ja">冬</span></button>
+  </div>
   <div class="lang-toggle" role="group" aria-label="Language / 言語">
     <button type="button" data-set="en">EN</button>
     <button type="button" data-set="ja">日本語</button>
@@ -716,6 +833,13 @@
   const cookieNotice = document.getElementById('cookie-notice');
   const cookieOk = document.getElementById('cookie-ok');
   if (cookieOk) cookieOk.addEventListener('click', () => { cookieNotice.style.display = 'none'; });
+
+  // ---- season toggle (overrides the auto-detected season for this view only) ----
+  document.querySelectorAll('.season-toggle button').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.documentElement.setAttribute('data-season', btn.getAttribute('data-season-set'));
+    });
+  });
 
   // ---- language toggle (state kept in the URL hash, no storage APIs) ----
   document.querySelectorAll('.lang-toggle button').forEach(btn=>{
