@@ -24,7 +24,7 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="GOSE — 神々の降る里 御所市">
 <meta property="og:title" content="GOSE — The Village Where Gods Descend / 神々の降る里 御所市">
-<meta property="og:description" content="葛城古道, Katsuragi Kodo shrines, Mount Kongo &amp; Mount Katsuragi's twin peaks, and the preserved Edo-period town of Gose-machi — a walking guide to Nara's Gose City, in English and Japanese.">
+<meta property="og:description" content="Katsuragi Kodo shrines, Mount Kongo &amp; Mount Katsuragi's twin peaks, and the preserved Edo-period town of Gose-machi — a walking guide to Nara's Gose City, in English and Japanese.">
 <meta property="og:url" content="https://REPLACE_WITH_YOUR_DOMAIN/">
 <meta property="og:image" content="https://REPLACE_WITH_YOUR_DOMAIN/og-image.png">
 <meta property="og:image:width" content="1200">
@@ -1140,13 +1140,17 @@
     }
 
     function findTodaySunset(date, lat, lon){
-      // Sample every 4 minutes through the day and report the moment
-      // the sun's altitude crosses from + to − (its actual descent,
-      // not just any crossing, so a polar-ish edge case near sunrise
-      // doesn't get picked up instead).
+      // Sample every minute through the day and report the moment the
+      // sun's altitude crosses from + to − (its actual descent, not
+      // just any crossing, so a polar-ish edge case near sunrise
+      // doesn't get picked up instead). A coarser step here would
+      // round most days onto the same displayed minute in a row this
+      // time of year, since real sunset only shifts by about a minute
+      // a day — it would look "stuck" for several days even though the
+      // underlying calculation was fine.
       const start = new Date(date); start.setHours(0,0,0,0);
       let prevAlt = null, prevT = null, result = null;
-      for(let m=0; m<=1440; m+=4){
+      for(let m=0; m<=1440; m+=1){
         const t = new Date(start.getTime() + m*60000);
         const sun = sunEquatorial(t);
         const alt = toHorizontal(sun.ra, sun.dec, t, lat, lon).altitude;
