@@ -80,15 +80,17 @@
       document.documentElement.setAttribute('lang', h);
     }
   })();
-  // Set the seasonal colour palette before first paint, based on today's
-  // date (Mar–May spring, Jun–Aug summer, Sep–Nov autumn, Dec–Feb winter).
-  // Visitors can still override it for their own view with the 春/夏/秋/冬
-  // toggle further down the page.
+  // Set the seasonal colour palette before first paint, based on
+  // today's date *in Japan Standard Time* — regardless of the
+  // visitor's own timezone, since this describes Gose's real season,
+  // not the visitor's. (Mar–May spring, Jun–Aug summer, Sep–Nov
+  // autumn, Dec–Feb winter.) Visitors can still override it for their
+  // own view with the 春/夏/秋/冬 toggle further down the page.
   (function(){
-    var m = new Date().getMonth() + 1; // 1–12
-    var season = (m>=3 && m<=5) ? 'spring'
-               : (m>=6 && m<=8) ? 'summer'
-               : (m>=9 && m<=11) ? 'autumn'
+    var jstMonth = new Date(Date.now() + 9*3600000).getUTCMonth() + 1; // 1–12, JST
+    var season = (jstMonth>=3 && jstMonth<=5) ? 'spring'
+               : (jstMonth>=6 && jstMonth<=8) ? 'summer'
+               : (jstMonth>=9 && jstMonth<=11) ? 'autumn'
                : 'winter';
     document.documentElement.setAttribute('data-season', season);
   })();
@@ -1139,6 +1141,14 @@
       return `M0,${-r} A${r},${r} 0 0,${outerSweep} 0,${r} A${rx},${r} 0 0,${innerSweep} 0,${-r} Z`;
     }
 
+    // Gose is in Japan Standard Time (UTC+9). All day-boundary and
+    // clock-display logic below is computed explicitly in JST rather
+    // than the visitor's own browser timezone, so someone viewing the
+    // site from outside Japan still sees Gose's real local time and
+    // real local "today" — not their own.
+    const JST_OFFSET_MS = 9 * 3600000;
+    function toJST(date){ return new Date(date.getTime() + JST_OFFSET_MS); }
+
     function findTodaySunset(date, lat, lon){
       // Sample every minute through the day and report the moment the
       // sun's altitude crosses from + to − (its actual descent, not
@@ -1148,7 +1158,9 @@
       // time of year, since real sunset only shifts by about a minute
       // a day — it would look "stuck" for several days even though the
       // underlying calculation was fine.
-      const start = new Date(date); start.setHours(0,0,0,0);
+      const jst = toJST(date);
+      const jstMidnightUTC = Date.UTC(jst.getUTCFullYear(), jst.getUTCMonth(), jst.getUTCDate(), 0, 0, 0, 0);
+      const start = new Date(jstMidnightUTC - JST_OFFSET_MS); // real UTC instant = JST midnight
       let prevAlt = null, prevT = null, result = null;
       for(let m=0; m<=1440; m+=1){
         const t = new Date(start.getTime() + m*60000);
@@ -1162,7 +1174,8 @@
 
     function fmtTime(date){
       if(!date) return '—';
-      return date.getHours().toString().padStart(2,'0') + ':' + date.getMinutes().toString().padStart(2,'0');
+      const j = toJST(date);
+      return j.getUTCHours().toString().padStart(2,'0') + ':' + j.getUTCMinutes().toString().padStart(2,'0');
     }
 
     // ---- season-aware sky colour, blended continuously from real
@@ -1174,7 +1187,7 @@
     function currentSeason(){
       const attr = document.documentElement.getAttribute('data-season');
       if (attr && SEASON_SKY[attr]) return attr;
-      const m = new Date().getMonth() + 1;
+      const m = toJST(new Date()).getUTCMonth() + 1;
       return (m>=3 && m<=5) ? 'spring' : (m>=6 && m<=8) ? 'summer'
            : (m>=9 && m<=11) ? 'autumn' : 'winter';
     }
@@ -1260,9 +1273,10 @@
       const now = new Date();
       measureHorizon();
 
-      if(sunsetDay !== now.toDateString()){
+      const jstDateKey = toJST(now).toISOString().slice(0,10); // JST calendar date
+      if(sunsetDay !== jstDateKey){
         sunsetToday = findTodaySunset(now, GOSE_LAT, GOSE_LON);
-        sunsetDay = now.toDateString();
+        sunsetDay = jstDateKey;
       }
 
       const sun = sunEquatorial(now);
